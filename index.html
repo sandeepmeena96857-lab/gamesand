@@ -1,0 +1,296 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Cyber Runner Ultimate</title>
+
+<style>
+body{
+margin:0;
+font-family:Arial;
+background:linear-gradient(135deg,#141e30,#243b55);
+color:white;
+text-align:center;
+}
+
+#game{
+width:90vmin;
+height:90vmin;
+margin:auto;
+display:grid;
+grid-template-columns:repeat(13,1fr);
+grid-template-rows:repeat(13,1fr);
+background:black;
+border:3px solid cyan;
+border-radius:10px;
+box-shadow:0 0 20px cyan;
+}
+
+.cell{
+display:flex;
+align-items:center;
+justify-content:center;
+font-size:3vmin;
+}
+
+.wall{background:#111;}
+
+button{
+padding:10px;
+margin:5px;
+font-size:16px;
+border:none;
+border-radius:6px;
+background:cyan;
+cursor:pointer;
+}
+
+#controls button{
+width:60px;
+height:60px;
+font-size:20px;
+}
+
+.shield{box-shadow:0 0 15px lime;}
+</style>
+</head>
+
+<body>
+
+<h1>Cyber Runner Ultimate</h1>
+Score: <span id="score">0</span> |
+Level: <span id="level">1</span>
+
+<div id="game"></div>
+
+<br>
+
+<button onclick="boost()">⚡ BOOST</button>
+<button onclick="shield()">🛡 SHIELD</button>
+<button onclick="restart()">🔄 Restart</button>
+
+<div id="controls">
+<br>
+<button onclick="moveMobile(0,-1)">⬆</button><br>
+<button onclick="moveMobile(-1,0)">⬅</button>
+<button onclick="moveMobile(0,1)">⬇</button>
+<button onclick="moveMobile(1,0)">➡</button>
+</div>
+
+<script>
+
+// 4 LEVELS (ALL FIXED WITH 💰)
+const levels=[
+
+// LEVEL 1
+[
+[1,1,1,1,1,1,1,1,1,1,1,1,1],
+[1,0,2,0,3,0,2,0,3,0,2,0,1],
+[1,0,1,1,1,0,1,1,1,0,1,0,1],
+[1,0,2,0,0,0,2,0,0,0,3,0,1],
+[1,0,1,1,1,0,1,1,1,0,1,0,1],
+[1,0,3,0,2,0,0,0,2,0,3,0,1],
+[1,0,1,1,1,0,1,1,1,0,1,0,1],
+[1,0,2,0,0,0,3,0,0,0,2,0,1],
+[1,0,1,1,1,0,1,1,1,0,1,0,1],
+[1,0,3,0,0,0,2,0,0,0,3,0,1],
+[1,0,1,1,1,0,1,1,1,0,1,0,1],
+[1,0,0,0,2,0,0,0,3,0,0,4,1],
+[1,1,1,1,1,1,1,1,1,1,1,1,1]
+],
+
+// LEVEL 2 (FIXED 💰)
+[
+[1,1,1,1,1,1,1,1,1,1,1,1,1],
+[1,0,2,0,2,0,3,0,2,0,3,0,1],
+[1,0,1,1,1,0,1,1,1,0,1,0,1],
+[1,0,3,0,0,0,2,0,0,0,2,0,1],
+[1,0,1,1,1,0,1,1,1,0,1,0,1],
+[1,0,2,0,3,0,0,0,3,0,2,0,1],
+[1,0,1,1,1,0,1,1,1,0,1,0,1],
+[1,0,3,0,0,0,2,0,0,0,3,0,1],
+[1,0,1,1,1,0,1,1,1,0,1,0,1],
+[1,0,2,0,0,0,3,0,0,0,2,0,1],
+[1,0,1,1,1,0,1,1,1,0,1,0,1],
+[1,0,0,0,3,0,0,0,2,0,0,4,1],
+[1,1,1,1,1,1,1,1,1,1,1,1,1]
+],
+
+// LEVEL 3
+[
+[1,1,1,1,1,1,1,1,1,1,1,1,1],
+[1,0,0,0,1,0,2,0,1,0,3,0,1],
+[1,0,1,0,1,0,1,0,1,0,1,0,1],
+[1,2,1,0,0,0,1,0,0,0,1,0,1],
+[1,0,1,1,1,0,1,1,1,0,1,0,1],
+[1,0,0,0,1,0,0,0,1,0,0,0,1],
+[1,0,1,0,1,1,1,0,1,1,1,0,1],
+[1,0,1,0,0,0,1,0,0,0,1,0,1],
+[1,0,1,1,1,0,1,1,1,0,1,0,1],
+[1,0,0,0,0,0,2,0,0,0,0,0,1],
+[1,0,1,1,1,1,1,1,1,1,1,0,1],
+[1,3,0,0,0,0,0,0,0,0,0,4,1],
+[1,1,1,1,1,1,1,1,1,1,1,1,1]
+],
+
+// LEVEL 4
+[
+[1,1,1,1,1,1,1,1,1,1,1,1,1],
+[1,0,3,0,2,0,3,0,2,0,3,0,1],
+[1,0,1,1,1,0,1,1,1,0,1,0,1],
+[1,2,0,0,0,0,2,0,0,0,2,0,1],
+[1,0,1,1,1,0,1,1,1,0,1,0,1],
+[1,3,0,2,0,0,3,0,2,0,3,0,1],
+[1,0,1,1,1,0,1,1,1,0,1,0,1],
+[1,2,0,0,0,0,2,0,0,0,2,0,1],
+[1,0,1,1,1,0,1,1,1,0,1,0,1],
+[1,3,0,0,0,0,3,0,0,0,3,0,1],
+[1,0,1,1,1,0,1,1,1,0,1,0,1],
+[1,0,0,0,2,0,0,0,3,0,0,4,1],
+[1,1,1,1,1,1,1,1,1,1,1,1,1]
+]
+
+]
+
+let grid,player,enemies=[]
+let score=0
+let level=0
+let speed=500
+let shieldActive=false
+let gameLoop
+
+function start(){
+grid=JSON.parse(JSON.stringify(levels[level]))
+player={x:1,y:1}
+spawnEnemies()
+document.getElementById("level").innerText=level+1
+runGame()
+draw()
+}
+
+function spawnEnemies(){
+enemies=[]
+for(let i=0;i<level+1;i++){
+enemies.push({x:11-i,y:11,mode:"patrol"})
+}
+}
+
+function draw(){
+let game=document.getElementById("game")
+game.innerHTML=""
+for(let y=0;y<grid.length;y++){
+for(let x=0;x<grid[y].length;x++){
+let cell=document.createElement("div")
+cell.className="cell"
+let val=grid[y][x]
+
+if(val==1) cell.classList.add("wall")
+
+if(player.x==x && player.y==y){
+cell.innerHTML="🤖"
+if(shieldActive) cell.classList.add("shield")
+}else{
+let e=enemies.find(a=>a.x==x && a.y==y)
+if(e) cell.innerHTML="👾"
+else if(val==2) cell.innerHTML="🪙"
+else if(val==3) cell.innerHTML="🍎"
+else if(val==4) cell.innerHTML="💰"
+}
+
+game.appendChild(cell)
+}}
+}
+
+document.addEventListener("keydown",e=>{
+let d={ArrowUp:[0,-1],ArrowDown:[0,1],ArrowLeft:[-1,0],ArrowRight:[1,0]}
+if(d[e.key]) movePlayer(d[e.key][0],d[e.key][1])
+})
+
+function moveMobile(dx,dy){movePlayer(dx,dy)}
+
+function movePlayer(dx,dy){
+let nx=player.x+dx,ny=player.y+dy
+if(grid[ny][nx]!=1){
+player.x=nx;player.y=ny
+collect(nx,ny);draw()
+}
+}
+
+function collect(x,y){
+
+if(grid[y][x]==2) score+=10
+if(grid[y][x]==3) score+=20
+
+if(grid[y][x]==4){
+
+setTimeout(()=>{
+level++
+
+if(level>=levels.length){
+alert("🏆 ALL LEVEL COMPLETE!")
+restart()
+return
+}
+
+alert("🎉 Level "+level+" Start!")
+start()
+
+},200)
+
+}
+
+grid[y][x]=0
+document.getElementById("score").innerText=score
+}
+
+function enemyMove(){
+enemies.forEach(e=>{
+let dx=player.x-e.x,dy=player.y-e.y
+let dist=Math.abs(dx)+Math.abs(dy)
+
+if(dist<=4){e.mode="chase"}else{e.mode="patrol"}
+
+if(e.mode=="patrol"){
+let m=[[0,-1],[0,1],[-1,0],[1,0]][Math.floor(Math.random()*4)]
+let nx=e.x+m[0],ny=e.y+m[1]
+if(grid[ny] && grid[ny][nx]!=1){e.x=nx;e.y=ny}
+}
+
+if(e.mode=="chase"){
+if(Math.abs(dx)>Math.abs(dy)) e.x+=dx/Math.abs(dx)
+else e.y+=dy/Math.abs(dy)
+}
+
+if(e.x==player.x && e.y==player.y && !shieldActive){
+alert("💀 Game Over")
+restart()
+}
+})
+
+draw()
+}
+
+function runGame(){
+clearInterval(gameLoop)
+gameLoop=setInterval(enemyMove,speed)
+}
+
+function boost(){
+speed=200;runGame()
+setTimeout(()=>{speed=500;runGame()},3000)
+}
+
+function shield(){
+shieldActive=true
+setTimeout(()=>shieldActive=false,4000)
+}
+
+function restart(){
+score=0;level=0;start()
+}
+
+start()
+
+</script>
+</body>
+</html>
